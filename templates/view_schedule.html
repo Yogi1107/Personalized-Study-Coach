@@ -1,0 +1,70 @@
+{% extends "base.html" %} {% block title %}Study Schedule - {{ exam['name'] }}{%
+endblock %} {% block content %}
+<div class="container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="text-primary">
+      <i class="bi bi-calendar-check"></i> {{ exam['name'] }} Schedule
+    </h1>
+    <form
+      action="{{ url_for('delete_schedule', exam_id=exam['id']) }}"
+      method="POST"
+      onsubmit="return confirm('Are you sure you want to delete this entire schedule?');"
+    >
+      <button type="submit" class="btn btn-danger">
+        <i class="bi bi-trash"></i> Delete Schedule
+      </button>
+    </form>
+  </div>
+
+  <div class="mb-3">
+    <a
+      href="{{ url_for('export_schedule_csv', exam_id=exam['id']) }}"
+      class="btn btn-outline-success me-2"
+    >
+      <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+    </a>
+    <a
+      href="{{ url_for('export_schedule_pdf', exam_id=exam['id']) }}"
+      class="btn btn-outline-danger"
+    >
+      <i class="bi bi-file-earmark-pdf"></i> Export PDF
+    </a>
+  </div>
+
+  {% for date_str, day_rows in schedule.items() %}
+  <div class="mb-5">
+    <h4 class="text-secondary mb-3">
+      <i class="bi bi-calendar-event"></i> Date: {{ date_str }}
+    </h4>
+    <table class="table table-bordered table-striped text-center align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th>Start</th>
+          <th>End</th>
+          <th>Subject</th>
+          <th>Chapter</th>
+          <th>Duration (min)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in day_rows %}
+        <tr>
+          <td>{{ row['slot_start'] }}</td>
+          <td>{{ row['slot_end'] }}</td>
+          <td>{{ row['subject'] or '' }}</td>
+          <td>{{ row['chapter'] or '' }}</td>
+          <td>{{ row['duration_minutes'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+</div>
+
+<style>
+  h4 i {
+    margin-right: 6px;
+  }
+</style>
+{% endblock %}

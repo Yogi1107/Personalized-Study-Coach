@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Schedule PDF</title>
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid black;
+        padding: 5px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      h2,
+      h4 {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Study Schedule</h2>
+    <h4>{{ exam.name }} (Exam Date: {{ exam.exam_date }})</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Subject</th>
+          <th>Chapter</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.date }}</td>
+          <td>{{ r.slot_start }}</td>
+          <td>{{ r.slot_end }}</td>
+          <td>{{ r.subject }}</td>
+          <td>{{ r.chapter or '' }}</td>
+          <td>{{ r.duration_minutes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

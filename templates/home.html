@@ -1,13 +1,61 @@
 {% extends "base.html" %} {% block title %}Home - Study Coach{% endblock %} {%
 block content %}
 <div class="container mt-5">
-  <h1 class="text-center mb-5 text-primary">
-    <i class="bi bi-book-half"></i> Welcome to Study Coach
+  <h1 class="text-center mb-4 text-primary">
+    <i class="bi bi-book-half"></i> Welcome, {{ username }}!
   </h1>
 
+  <!-- User Progress Cards -->
+  <div class="row justify-content-center g-4 mb-5">
+    <!-- Total Notes -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-journal-text display-4 text-primary mb-2"></i>
+          <h5 class="card-title">Total Notes</h5>
+          <p class="card-text fs-4">{{ total_notes }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summaries Generated -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-file-text display-4 text-success mb-2"></i>
+          <h5 class="card-title">Summaries Generated</h5>
+          <p class="card-text fs-4">{{ total_summaries }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Questions Generated -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-question-circle display-4 text-warning mb-2"></i>
+          <h5 class="card-title">Questions Generated</h5>
+          <p class="card-text fs-4">{{ total_questions }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Study Schedules -->
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <i class="bi bi-calendar-check display-4 text-info mb-2"></i>
+          <h5 class="card-title">Study Schedules</h5>
+          <p class="card-text fs-4">{{ total_schedules }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Cards -->
   <div class="row justify-content-center g-4">
     <!-- Notes Card -->
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="card shadow-sm h-100 text-center hover-card">
         <div
           class="card-body d-flex flex-column justify-content-center align-items-center"
@@ -25,7 +73,7 @@ block content %}
     </div>
 
     <!-- Upload Card -->
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="card shadow-sm h-100 text-center hover-card">
         <div
           class="card-body d-flex flex-column justify-content-center align-items-center"
@@ -43,7 +91,7 @@ block content %}
     </div>
 
     <!-- AI Tools Card -->
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="card shadow-sm h-100 text-center hover-card">
         <div
           class="card-body d-flex flex-column justify-content-center align-items-center"
@@ -60,14 +108,69 @@ block content %}
         </div>
       </div>
     </div>
+
+    <!-- Study Planner Card -->
+    <div class="col-md-3">
+      <div class="card shadow-sm h-100 text-center hover-card">
+        <div
+          class="card-body d-flex flex-column justify-content-center align-items-center"
+        >
+          <i class="bi bi-calendar-check display-4 text-info mb-3"></i>
+          <h4 class="card-title mb-3">Study Planner</h4>
+          <p class="card-text text-muted">
+            Create and view personalized study schedules.
+          </p>
+          <div class="d-grid gap-2 w-100">
+            <a
+              href="{{ url_for('create_schedule') }}"
+              class="btn btn-info text-white"
+            >
+              <i class="bi bi-plus-circle"></i> Create New
+            </a>
+            <a
+              href="{{ url_for('all_schedules') }}"
+              class="btn btn-outline-info"
+            >
+              <i class="bi bi-eye"></i> View Schedules
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Floating RAG Chat Button -->
+<a href="{{ url_for('rag_chat') }}" class="rag-chat-btn">
+  <i class="bi bi-chat-dots-fill fs-3"></i>
+</a>
+
 <style>
-  /* Add a subtle hover effect for the dashboard cards */
   .hover-card:hover {
     transform: translateY(-5px);
     transition: all 0.2s ease-in-out;
+  }
+
+  .rag-chat-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #dc3545;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+    z-index: 1000;
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .rag-chat-btn:hover {
+    transform: scale(1.1);
   }
 </style>
 {% endblock %}

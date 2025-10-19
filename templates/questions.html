@@ -11,18 +11,50 @@
       </h4>
     </div>
     <div class="card-body">
-      <div
-        class="note-content bg-light p-4 rounded"
-        style="white-space: pre-wrap; word-wrap: break-word"
+      {% if questions %}
+      <form
+        method="POST"
+        action="{{ url_for('complete_question', note_id=note.id) }}"
       >
-        {{ questions }}
-      </div>
+        {% for idx, q in enumerate(questions) %}
+        <div class="form-check mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            name="completed[]"
+            value="{{ idx }}"
+            id="q{{ idx }}"
+            {%
+            if
+            q.completed
+            %}checked{%
+            endif
+            %}
+          />
+          <label class="form-check-label" for="q{{ idx }}">
+            {{ q.text }}
+          </label>
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-success mt-3">
+          <i class="bi bi-save"></i> Save Progress
+        </button>
+      </form>
+      {% else %}
+      <p class="text-muted">
+        No practice questions generated yet for this note.
+      </p>
+      {% endif %}
+
       <div class="mt-4">
         <a
           href="{{ url_for('view_note', note_id=note.id) }}"
           class="btn btn-outline-secondary"
         >
           <i class="bi bi-arrow-left"></i> Back to Note
+        </a>
+        <a href="{{ url_for('notes') }}" class="btn btn-secondary">
+          <i class="bi bi-arrow-left"></i> Back to Notes
         </a>
       </div>
     </div>

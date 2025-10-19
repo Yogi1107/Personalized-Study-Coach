@@ -1,0 +1,111 @@
+{% extends "base.html" %} {% block title %}Create Schedule - Study Coach{%
+endblock %} {% block content %}
+<div class="container mt-4">
+  <h2>Create Exam Schedule</h2>
+  <form
+    method="POST"
+    action="{{ url_for('create_schedule') }}"
+    id="schedule-form"
+  >
+    <div class="mb-3">
+      <label class="form-label">Exam Name</label>
+      <input class="form-control" name="exam_name" required />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Exam Date</label>
+      <input class="form-control" type="date" name="exam_date" required />
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Study start time each day</label>
+        <input
+          class="form-control"
+          type="time"
+          name="start_time"
+          value="18:00"
+          required
+        />
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Total study hours per day</label>
+        <input
+          class="form-control"
+          type="number"
+          name="hours_per_day"
+          min="1"
+          max="12"
+          value="4"
+          required
+        />
+      </div>
+    </div>
+
+    <hr />
+    <h5>Subjects & Chapters</h5>
+    <div id="subjects-container">
+      <!-- JS will clone this -->
+      <div class="subject-block mb-3 row align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Subject Name</label>
+          <input class="form-control" name="subject_name[]" required />
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Chapters (comma-separated)</label>
+          <input
+            class="form-control"
+            name="chapters[]"
+            placeholder="Chapter1, Chapter2, ..."
+          />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Priority</label>
+          <select class="form-select" name="priority[]">
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-danger remove-subject">−</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <button type="button" id="add-subject" class="btn btn-secondary">
+        + Add another subject
+      </button>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary">Generate Schedule</button>
+    </div>
+  </form>
+  <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">
+    <i class="bi bi-arrow-left"></i> Back to Home
+  </a>
+</div>
+
+<script>
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.id === "add-subject") {
+      const container = document.getElementById("subjects-container");
+      const block = container.querySelector(".subject-block");
+      const clone = block.cloneNode(true);
+      // clear inputs
+      clone.querySelectorAll("input").forEach((i) => (i.value = ""));
+      container.appendChild(clone);
+    }
+    if (e.target && e.target.classList.contains("remove-subject")) {
+      const blocks = document.querySelectorAll(".subject-block");
+      if (blocks.length > 1) {
+        e.target.closest(".subject-block").remove();
+      } else {
+        alert("At least one subject required");
+      }
+    }
+  });
+</script>
+{% endblock %}

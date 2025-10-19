@@ -6,9 +6,26 @@ block content %}
   </h2>
 
   {% if notes %}
-  <div class="row">
+  <!-- Filter Dropdown -->
+  <div class="mb-3 text-center">
+    <label for="filterStatus" class="form-label">Filter by Status:</label>
+    <select
+      id="filterStatus"
+      class="form-select w-auto d-inline-block"
+      onchange="filterNotes()"
+    >
+      <option value="all">All</option>
+      <option value="completed">Completed</option>
+      <option value="pending">Pending</option>
+    </select>
+  </div>
+
+  <div class="row" id="notesContainer">
     {% for note in notes %}
-    <div class="col-md-4 mb-4">
+    <div
+      class="col-md-4 mb-4 note-card"
+      data-status="{{ 'completed' if note.is_completed else 'pending' }}"
+    >
       <div class="card shadow-sm h-100">
         <div
           class="card-header d-flex justify-content-between align-items-center"
@@ -28,7 +45,7 @@ block content %}
             endif %}
           </p>
 
-          <!-- View / Delete Buttons -->
+          <!-- View / Delete / Mark Completed -->
           <a
             href="{{ url_for('view_note', note_id=note.id) }}"
             class="btn btn-primary btn-sm mb-1"
@@ -48,6 +65,19 @@ block content %}
               <i class="bi bi-trash"></i> Delete
             </button>
           </form>
+          {% if not note.is_completed %}
+          <form
+            method="POST"
+            action="{{ url_for('complete_note', note_id=note.id) }}"
+            style="display: inline"
+          >
+            <button type="submit" class="btn btn-success btn-sm mb-1">
+              <i class="bi bi-check2-circle"></i> Mark Completed
+            </button>
+          </form>
+          {% else %}
+          <span class="badge bg-success mb-1">Completed</span>
+          {% endif %}
 
           <!-- AI Feature Buttons -->
           <div class="mt-2">
@@ -81,5 +111,20 @@ block content %}
     <a href="{{ url_for('upload') }}">uploading a note</a>.
   </p>
   {% endif %}
+
+  <a href="{{ url_for('home') }}" class="btn btn-secondary mt-4">
+    <i class="bi bi-arrow-left"></i> Back to Home
+  </a>
 </div>
+
+<script>
+  function filterNotes() {
+    const filter = document.getElementById("filterStatus").value;
+    document.querySelectorAll(".note-card").forEach((card) => {
+      const status = card.getAttribute("data-status");
+      card.style.display =
+        filter === "all" || filter === status ? "block" : "none";
+    });
+  }
+</script>
 {% endblock %}

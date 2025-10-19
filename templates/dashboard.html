@@ -1,0 +1,56 @@
+{% extends "base.html" %} {% block title %}Dashboard - Study Coach{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Hello, {{ current_user.username }}!</h2>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Total Notes</h5>
+          <p class="card-text display-6">{{ total_notes }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Completed Notes</h5>
+          <p class="card-text display-6">{{ completed_notes }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Study Progress</h5>
+      <canvas id="progressChart" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('progressChart').getContext('2d');
+  const progressChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+          labels: ['Completed', 'Remaining'],
+          datasets: [{
+              data: [{{ completed_notes }}, {{ total_notes - completed_notes }}],
+              backgroundColor: ['#0d6efd', '#e9ecef'],
+              borderWidth: 1
+          }]
+      },
+      options: {
+          responsive: true,
+          plugins: {
+              legend: { position: 'bottom' },
+              tooltip: { enabled: true }
+          }
+      }
+  });
+</script>
+{% endblock %}
