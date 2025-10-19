@@ -17,10 +17,7 @@ Personalized Study Coach allows users to:
 ## **Tech Stack**
 - **Backend:** Flask (Python)
 - **Database:** SQLite (notes, users, progress)
-- **AI / NLP:** Hugging Face Transformers or OpenAI API
 - **Frontend:** HTML, CSS, JavaScript, Bootstrap
-- **Optional:** FAISS for local embeddings & RAG
-- **Deployment:** Render, PythonAnywhere, or Heroku
 
 ---
 

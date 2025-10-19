@@ -1,4 +1,9 @@
 # ===================== app.py ===================== #
+<<<<<<< HEAD
+=======
+import json
+from rag_service import answer_with_context
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 from flask import (
     Flask, render_template, request, redirect, url_for, flash,
     jsonify, make_response, send_file, session
@@ -366,9 +371,26 @@ def view_note(note_id):
     
     note_dict = dict(note)
     note_dict['upload_date'] = datetime.fromisoformat(note['upload_date'])
+<<<<<<< HEAD
     return render_template('view_note.html', note=note_dict)
 
 
+=======
+    
+    # ✅ Decode stored JSON questions safely
+    if note_dict.get('questions'):
+        try:
+            note_dict['questions'] = json.loads(note_dict['questions'])
+        except Exception:
+            note_dict['questions'] = []
+    else:
+        note_dict['questions'] = []
+
+    return render_template('view_note.html', note=note_dict)
+
+
+
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 @app.route('/delete/<int:note_id>', methods=['POST'])
 @login_required
 def delete_note(note_id):
@@ -412,21 +434,33 @@ def summarize_note(note_id):
     return render_template('summary.html', note=note_dict, summary=summary)
 
 
+<<<<<<< HEAD
 @app.route('/questions/<int:note_id>')
+=======
+@app.route('/questions/<int:note_id>', methods=['GET', 'POST'])
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 @login_required
 def questions_route(note_id):
     conn = get_db_connection()
     note = conn.execute(
+<<<<<<< HEAD
         'SELECT * FROM notes WHERE id = ? AND user_id = ?', 
         (note_id, session['user_id'])
     ).fetchone()
     
+=======
+        'SELECT * FROM notes WHERE id = ? AND user_id = ?',
+        (note_id, session['user_id'])
+    ).fetchone()
+
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
     if not note:
         conn.close()
         flash('Note not found', 'danger')
         return redirect(url_for('notes'))
 
     note_dict = dict(note)
+<<<<<<< HEAD
     questions = note_dict.get('questions')
     
     if not questions:
@@ -442,6 +476,36 @@ def questions_route(note_id):
     return render_template('questions.html', note=note_dict, questions=questions)
 
 
+=======
+    questions_data = note_dict.get('questions')
+
+    # Try to load stored questions
+    try:
+        questions = json.loads(questions_data) if questions_data else []
+    except Exception:
+        questions = []
+
+    # Generate if not found
+    if not questions:
+        try:
+            questions = generate_questions_from_text(note_dict['content'])
+            conn.execute(
+                'UPDATE notes SET questions = ? WHERE id = ?',
+                (json.dumps(questions), note_id)
+            )
+            conn.commit()
+        except Exception as e:
+            flash(f'Error generating questions: {str(e)}', 'danger')
+            questions = []
+
+    conn.close()
+
+    print("Generated Questions:", questions)
+    return render_template('questions.html', note=note_dict, questions=questions)
+
+
+
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 @app.route('/explain/<int:note_id>', methods=['GET', 'POST'])
 @login_required
 def explain_note(note_id):
@@ -469,6 +533,39 @@ def explain_note(note_id):
     
     return render_template('explain.html', note=note_dict, explanation=explanation)
 
+<<<<<<< HEAD
+=======
+@app.route('/ask_note/<int:note_id>', methods=['POST'])
+@login_required
+def ask_note(note_id):
+    query = request.form.get('query')
+    if not query:
+        flash('Please enter a question.', 'warning')
+        return redirect(url_for('view_note', note_id=note_id))
+
+    conn = get_db_connection()
+    note = conn.execute(
+        'SELECT * FROM notes WHERE id = ? AND user_id = ?',
+        (note_id, session['user_id'])
+    ).fetchone()
+    conn.close()
+
+    if not note:
+        flash('Note not found.', 'danger')
+        return redirect(url_for('notes'))
+
+    note_text = note['content']
+    answer = answer_with_context(note_text, query)
+
+    return render_template(
+        'view_note.html',
+        note=dict(note),
+        query=query,
+        answer=answer
+    )
+
+
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 
 # ===================== Routes: RAG Chat ===================== #
 @app.route('/rag_chat')

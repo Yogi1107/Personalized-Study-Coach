@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html" %} {% block title %}{{ note.title }} - Study Coach{%
 endblock %} {% block content %}
 <div class="container mt-5">
@@ -47,5 +48,46 @@ endblock %} {% block content %}
       <i class="bi bi-arrow-left"></i> Back to Home
     </a>
   </div>
+=======
+{% extends 'base.html' %}
+{% block title %}View Note{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm p-4">
+        <h3 class="text-primary">{{ note.title }}</h3>
+        <p class="text-muted mb-2">
+            Uploaded on {{ note.upload_date}}
+        </p>
+        <hr>
+        <p style="white-space: pre-line;">{{ note.content }}</p>
+    </div>
+
+    <div class="card mt-4 p-4 shadow-sm">
+        <h5 class="text-secondary mb-3">Ask a question about this note</h5>
+        <form action="{{ url_for('ask_note', note_id=note.id) }}" method="POST">
+            <div class="input-group">
+                <input type="text" name="query" class="form-control" placeholder="Type your question here..." required>
+                <button class="btn btn-primary" type="submit">Ask</button>
+            </div>
+        </form>
+    </div>
+
+    {% if query %}
+    <div class="card mt-4 p-4 shadow-sm border-success">
+        <h6 class="text-success">Your Question:</h6>
+        <p>{{ query }}</p>
+        <hr>
+        <h6 class="text-info">AI Answer:</h6>
+        <p>{{ answer }}</p>
+    </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{{ url_for('notes') }}" class="btn btn-outline-secondary">
+            ← Back to All Notes
+        </a>
+    </div>
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 </div>
 {% endblock %}

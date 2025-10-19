@@ -1,27 +1,45 @@
+<<<<<<< HEAD
 {% extends "base.html" %} {% block title %}Practice Questions - {{ note.title
 }}{% endblock %} {% block content %}
+=======
+{% extends "base.html" %}
+{% block title %}Practice Questions - {{ note.title }}{% endblock %}
+{% block content %}
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 <div class="container mt-5">
   <div class="card shadow">
     <div
       class="card-header bg-success text-white d-flex justify-content-between align-items-center"
     >
       <h4 class="mb-0">
+<<<<<<< HEAD
         <i class="bi bi-question-circle"></i> Practice Questions: {{ note.title
         }}
+=======
+        <i class="bi bi-question-circle"></i>
+        Practice Questions: {{ note.title }}
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
       </h4>
     </div>
     <div class="card-body">
       {% if questions %}
       <form
         method="POST"
+<<<<<<< HEAD
         action="{{ url_for('complete_question', note_id=note.id) }}"
       >
         {% for idx, q in enumerate(questions) %}
+=======
+        action="{{ url_for('questions_route', note_id=note.id) }}"
+      >
+        {% for q in questions %}
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
         <div class="form-check mb-3">
           <input
             class="form-check-input"
             type="checkbox"
             name="completed[]"
+<<<<<<< HEAD
             value="{{ idx }}"
             id="q{{ idx }}"
             {%
@@ -32,6 +50,13 @@
             %}
           />
           <label class="form-check-label" for="q{{ idx }}">
+=======
+            value="{{ loop.index0 }}"
+            id="q{{ loop.index0 }}"
+            {% if q.completed %}checked{% endif %}
+          />
+          <label class="form-check-label" for="q{{ loop.index0 }}">
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
             {{ q.text }}
           </label>
         </div>

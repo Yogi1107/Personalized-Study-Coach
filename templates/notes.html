@@ -68,7 +68,11 @@ block content %}
           {% if not note.is_completed %}
           <form
             method="POST"
+<<<<<<< HEAD
             action="{{ url_for('complete_note', note_id=note.id) }}"
+=======
+            action="{{ url_for('view_note', note_id=note.id) }}"
+>>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
             style="display: inline"
           >
             <button type="submit" class="btn btn-success btn-sm mb-1">
