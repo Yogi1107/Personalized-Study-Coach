@@ -1,93 +1,114 @@
-<<<<<<< HEAD
-{% extends "base.html" %} {% block title %}{{ note.title }} - Study Coach{%
-endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}{{ note.title }} - Study Coach{% endblock %}
+{% block content %}
+
 <div class="container mt-5">
-  <h2 class="text-primary">
-    <i class="bi bi-journal-text"></i> {{ note.title }}
-  </h2>
-  <p class="text-muted" style="font-size: 0.9rem">
-    <i class="bi bi-calendar"></i> {{ note.upload_date.strftime('%B %d, %Y at
-    %I:%M %p') }}
-  </p>
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h3 class="mb-0">
+        <i class="bi bi-journal-text"></i> {{ note.title }}
+      </h3>
+      <p class="mb-0 mt-2" style="font-size: 0.9rem">
+        <i class="bi bi-calendar"></i> 
+        Uploaded on {{ note.upload_date.strftime('%B %d, %Y at %I:%M %p') }}
+      </p>
+    </div>
 
-  <hr />
-  <h5>Content:</h5>
-  <p>{{ note.content }}</p>
+    <div class="card-body">
+      <h5 class="text-secondary mb-3">Content:</h5>
+      <p style="white-space: pre-line;">{{ note.content }}</p>
 
-  {% if note.summary %}
-  <hr />
-  <h5>Summary:</h5>
-  <p>{{ note.summary }}</p>
-  {% endif %} {% if note.questions %}
-  <hr />
-  <h5>Questions:</h5>
-  <p>{{ note.questions }}</p>
+      {% if note.summary %}
+      <hr />
+      <h5 class="text-secondary mb-3">Summary:</h5>
+      <p>{{ note.summary }}</p>
+      {% endif %}
+
+      {% if note.questions %}
+      <hr />
+      <h5 class="text-secondary mb-3">Practice Questions:</h5>
+      <ul class="list-group">
+        {% for q in note.questions %}
+        <li class="list-group-item">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="q{{ loop.index0 }}" {% if q.completed %}checked{% endif %}>
+            <label class="form-check-label" for="q{{ loop.index0 }}">
+              {{ q.text }}
+            </label>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Ask AI Section -->
+  <div class="card mt-4 shadow-sm">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-chat-dots"></i> Ask a Question About This Note
+      </h5>
+    </div>
+    <div class="card-body">
+      <form action="{{ url_for('ask_note', note_id=note.id) }}" method="POST">
+        <div class="input-group">
+          <input 
+            type="text" 
+            name="query" 
+            class="form-control" 
+            placeholder="Type your question here..." 
+            required
+          >
+          <button class="btn btn-success" type="submit">
+            <i class="bi bi-send"></i> Ask
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- AI Answer Display -->
+  {% if query %}
+  <div class="card mt-4 shadow-sm border-success">
+    <div class="card-body">
+      <h6 class="text-success">
+        <i class="bi bi-question-circle"></i> Your Question:
+      </h6>
+      <p class="mb-3">{{ query }}</p>
+      <hr>
+      <h6 class="text-info">
+        <i class="bi bi-lightbulb"></i> AI Answer:
+      </h6>
+      <p>{{ answer }}</p>
+    </div>
+  </div>
   {% endif %}
 
-  <!-- AI Actions -->
-  <div class="mt-3">
+  <!-- AI Actions & Navigation -->
+  <div class="mt-4 d-flex flex-wrap gap-2">
     <a
       href="{{ url_for('summarize_note', note_id=note.id) }}"
-      class="btn btn-warning btn-sm"
+      class="btn btn-warning"
     >
       <i class="bi bi-lightbulb"></i> Summarize
     </a>
     <a
       href="{{ url_for('questions_route', note_id=note.id) }}"
-      class="btn btn-info btn-sm"
+      class="btn btn-info"
     >
-      <i class="bi bi-question-circle"></i> Questions
+      <i class="bi bi-question-circle"></i> Generate Questions
     </a>
     <a
       href="{{ url_for('explain_note', note_id=note.id) }}"
-      class="btn btn-success btn-sm"
+      class="btn btn-success"
     >
-      <i class="bi bi-chat-dots"></i> Explain
+      <i class="bi bi-chat-dots"></i> Explain Topic
     </a>
-    <a href="{{ url_for('home') }}" class="btn btn-secondary">
-      <i class="bi bi-arrow-left"></i> Back to Home
+    <a href="{{ url_for('notes') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Notes
     </a>
   </div>
-=======
-{% extends 'base.html' %}
-{% block title %}View Note{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="card shadow-sm p-4">
-        <h3 class="text-primary">{{ note.title }}</h3>
-        <p class="text-muted mb-2">
-            Uploaded on {{ note.upload_date}}
-        </p>
-        <hr>
-        <p style="white-space: pre-line;">{{ note.content }}</p>
-    </div>
-
-    <div class="card mt-4 p-4 shadow-sm">
-        <h5 class="text-secondary mb-3">Ask a question about this note</h5>
-        <form action="{{ url_for('ask_note', note_id=note.id) }}" method="POST">
-            <div class="input-group">
-                <input type="text" name="query" class="form-control" placeholder="Type your question here..." required>
-                <button class="btn btn-primary" type="submit">Ask</button>
-            </div>
-        </form>
-    </div>
-
-    {% if query %}
-    <div class="card mt-4 p-4 shadow-sm border-success">
-        <h6 class="text-success">Your Question:</h6>
-        <p>{{ query }}</p>
-        <hr>
-        <h6 class="text-info">AI Answer:</h6>
-        <p>{{ answer }}</p>
-    </div>
-    {% endif %}
-
-    <div class="mt-4">
-        <a href="{{ url_for('notes') }}" class="btn btn-outline-secondary">
-            ← Back to All Notes
-        </a>
-    </div>
->>>>>>> e537209 (Added updated llm_service, view_note, and bug fixes)
 </div>
+
 {% endblock %}
