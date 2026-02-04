@@ -1,3 +1,9 @@
+"""
+schedule.py - Study Schedule Routes
+
+Handles exam and study schedule creation, viewing, and export.
+"""
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, make_response, send_file
 from flask_login import login_required
 from psycopg2.extras import RealDictCursor
@@ -18,14 +24,16 @@ from utils import (
     assign_chapters_to_slots
 )
 
-# ===================== Routes: Scheduling ===================== #
+# ===================== Blueprint ===================== #
 
 schedule_bp = Blueprint('schedule', __name__)
 
+# ===================== Routes ===================== #
 
 @schedule_bp.route('/create_schedule', methods=['GET', 'POST'])
 @login_required
 def create_schedule():
+    """Create a new study schedule for an exam."""
     if request.method == 'POST':
         exam_name = request.form.get('exam_name', '').strip()
         exam_date = request.form.get('exam_date', '').strip()
@@ -40,6 +48,7 @@ def create_schedule():
             return redirect(url_for('schedule.create_schedule'))
         
         try:
+            # Save exam
             with get_db_connection() as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
                     cur.execute(
@@ -56,11 +65,11 @@ def create_schedule():
                                 (exam_id, name.strip(), ch.strip(), pr)
                             )
                     
-                    # fetch subjects back
+                    # Fetch subjects back
                     cur.execute('SELECT * FROM subjects WHERE exam_id = %s', (exam_id,))
                     subjects_rows = cur.fetchall()
             
-            # Build mapping for schedule generation (done outside connection to avoid nested DB calls)
+            # Build mapping for schedule generation
             subj_chapters_map = {s['subject_name']: split_chapters(s['chapters']) for s in subjects_rows}
             priorities = {s['subject_name']: s.get('priority') or 'Medium' for s in subjects_rows}
             subject_list = list(subj_chapters_map.keys())
@@ -69,6 +78,7 @@ def create_schedule():
                 flash('Please add at least one subject', 'danger')
                 return redirect(url_for('schedule.create_schedule'))
             
+            # Calculate schedule
             today_date = date.today()
             exam_day = datetime.fromisoformat(exam_date).date()
             total_days = (exam_day - today_date).days
@@ -80,19 +90,25 @@ def create_schedule():
             weight_map = {subj: PRIORITY_WEIGHT.get(priorities[subj], 1.0) for subj in subject_list}
             schedule_slots = []
             
+            # Generate schedule for each day
             for d in range(total_days):
                 day_date = today_date + timedelta(days=d)
                 ordered_subjects = sorted(subject_list, key=lambda s: -weight_map.get(s, 1.0))
                 total_weight = sum(weight_map[s] for s in ordered_subjects)
                 total_minutes = hours_per_day * 60
+                
+                # Allocate time per subject based on priority
                 subj_minutes = {
                     s: int(round((weight_map[s] / total_weight) * total_minutes))
                     for s in ordered_subjects
                 }
+                
+                # Adjust for rounding errors
                 diff = total_minutes - sum(subj_minutes.values())
                 if ordered_subjects:
                     subj_minutes[ordered_subjects[0]] += diff
                 
+                # Create time slots
                 cur_min = time_str_to_minutes(start_time)
                 for subj in ordered_subjects:
                     minutes_for_subj = subj_minutes[subj]
@@ -110,9 +126,10 @@ def create_schedule():
                         cur_min += slot_len
                         minutes_for_subj -= slot_len
             
+            # Assign chapters to slots
             assigned_with_chapters = assign_chapters_to_slots(subj_chapters_map, schedule_slots)
             
-            # Save into schedules table
+            # Save schedule to database
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     for row in assigned_with_chapters:
@@ -144,6 +161,7 @@ def create_schedule():
 @schedule_bp.route('/schedules')
 @login_required
 def all_schedules():
+    """Display all exam schedules."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute('SELECT * FROM exams ORDER BY exam_date')
@@ -155,20 +173,26 @@ def all_schedules():
 @schedule_bp.route('/schedule/<int:exam_id>')
 @login_required
 def view_schedule(exam_id):
+    """View a specific exam schedule."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute('SELECT * FROM exams WHERE id = %s', (exam_id,))
             exam = cur.fetchone()
-            cur.execute('SELECT * FROM schedules WHERE exam_id = %s ORDER BY date, slot_start', (exam_id,))
+            cur.execute(
+                'SELECT * FROM schedules WHERE exam_id = %s ORDER BY date, slot_start',
+                (exam_id,)
+            )
             rows = cur.fetchall()
     
     if not exam:
         flash('Exam not found', 'danger')
         return redirect(url_for('schedule.all_schedules'))
     
+    # Group schedule by date
     grouped = OrderedDict()
     for r in rows:
-        grouped.setdefault(r['date'].isoformat() if isinstance(r['date'], (datetime,)) else r['date'], []).append(dict(r))
+        date_key = r['date'].isoformat() if isinstance(r['date'], datetime) else r['date']
+        grouped.setdefault(date_key, []).append(dict(r))
     
     return render_template('view_schedule.html', exam=exam, schedule=grouped, exam_id=exam_id)
 
@@ -176,6 +200,7 @@ def view_schedule(exam_id):
 @schedule_bp.route('/schedule/<int:exam_id>/delete', methods=['POST'])
 @login_required
 def delete_schedule(exam_id):
+    """Delete an exam schedule."""
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute('DELETE FROM schedules WHERE exam_id = %s', (exam_id,))
@@ -189,6 +214,7 @@ def delete_schedule(exam_id):
 @schedule_bp.route('/schedule/<int:exam_id>/export/csv')
 @login_required
 def export_schedule_csv(exam_id):
+    """Export schedule as CSV file."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
@@ -201,9 +227,17 @@ def export_schedule_csv(exam_id):
     si = io.StringIO()
     cw = csv.writer(si)
     cw.writerow(['Date', 'Start', 'End', 'Subject', 'Chapter', 'Duration (min)'])
+    
     for r in rows:
-        date_val = r['date'].isoformat() if isinstance(r['date'], (datetime,)) else r['date']
-        cw.writerow([date_val, r['slot_start'], r['slot_end'], r['subject'], r.get('chapter', ''), r['duration_minutes']])
+        date_val = r['date'].isoformat() if isinstance(r['date'], datetime) else r['date']
+        cw.writerow([
+            date_val,
+            r['slot_start'],
+            r['slot_end'],
+            r['subject'],
+            r.get('chapter', ''),
+            r['duration_minutes']
+        ])
     
     output = make_response(si.getvalue())
     output.headers["Content-Disposition"] = f"attachment; filename=exam_{exam_id}_schedule.csv"
@@ -214,11 +248,15 @@ def export_schedule_csv(exam_id):
 @schedule_bp.route('/schedule/<int:exam_id>/export/pdf')
 @login_required
 def export_schedule_pdf(exam_id):
+    """Export schedule as PDF file."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute('SELECT * FROM exams WHERE id = %s', (exam_id,))
             exam = cur.fetchone()
-            cur.execute('SELECT * FROM schedules WHERE exam_id = %s ORDER BY date, slot_start', (exam_id,))
+            cur.execute(
+                'SELECT * FROM schedules WHERE exam_id = %s ORDER BY date, slot_start',
+                (exam_id,)
+            )
             rows = cur.fetchall()
     
     if not exam or not rows:
@@ -230,22 +268,31 @@ def export_schedule_pdf(exam_id):
     elements = []
     styles = getSampleStyleSheet()
     
+    # Add title and exam info
     elements.append(Paragraph(f"Study Schedule: {exam['name']}", styles['Title']))
     elements.append(Paragraph(f"Exam Date: {exam['exam_date']}", styles['Normal']))
     elements.append(Spacer(1, 12))
     
+    # Group schedule by date
     grouped = OrderedDict()
     for r in rows:
-        date_key = r['date'].isoformat() if isinstance(r['date'], (datetime,)) else r['date']
+        date_key = r['date'].isoformat() if isinstance(r['date'], datetime) else r['date']
         grouped.setdefault(date_key, []).append(r)
     
+    # Create table for each day
     for date_str, day_rows in grouped.items():
         elements.append(Paragraph(f"Date: {date_str}", styles['Heading2']))
         elements.append(Spacer(1, 6))
         
         data = [['Start', 'End', 'Subject', 'Chapter', 'Duration (min)']]
         for r in day_rows:
-            data.append([r['slot_start'], r['slot_end'], r['subject'], r.get('chapter', '') or '', r['duration_minutes']])
+            data.append([
+                r['slot_start'],
+                r['slot_end'],
+                r['subject'],
+                r.get('chapter', '') or '',
+                r['duration_minutes']
+            ])
         
         table = Table(data, colWidths=[60, 60, 120, 140, 80], repeatRows=1)
         table.setStyle(TableStyle([
@@ -264,4 +311,9 @@ def export_schedule_pdf(exam_id):
     doc.build(elements)
     buffer.seek(0)
     
-    return send_file(buffer, as_attachment=True, download_name=f"exam_{exam_id}_schedule.pdf", mimetype='application/pdf')
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"exam_{exam_id}_schedule.pdf",
+        mimetype='application/pdf'
+    )

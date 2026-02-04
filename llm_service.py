@@ -3,34 +3,32 @@ llm_service.py
 
 Hybrid LLM service (Ollama + Qdrant + HuggingFace embeddings)
 
-- Phase 2: Single-note AI assistance
-- Phase 4: Cross-note RAG-based contextual AI
+- Phase 2: Single-note AI assistance (summarize, questions, explain)
+- Phase 4: Cross-note RAG-based contextual AI (all uploaded notes)
 """
 
 import re
 import uuid
 import traceback
 import requests
-import numpy as np
 
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
 
-# -------------------- Ollama Setup -------------------- #
+# ===================== Configuration ===================== #
+
+# Ollama Setup
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "gemma:2b"
 
-# -------------------- Embedding Setup -------------------- #
+# Embedding Setup
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
 
-# -------------------- Qdrant Setup -------------------- #
+# Qdrant Setup
 QDRANT_COLLECTION = "notes_collection"
-
-qdrant = QdrantClient(
-    url="http://localhost:6333",  # Qdrant running locally or via Docker
-)
+qdrant = QdrantClient(url="http://localhost:6333")
 
 # Create collection if not exists
 if not qdrant.collection_exists(QDRANT_COLLECTION):
@@ -42,8 +40,10 @@ if not qdrant.collection_exists(QDRANT_COLLECTION):
         )
     )
 
-# -------------------- Helper: Clean Text -------------------- #
+# ===================== Helper Functions ===================== #
+
 def clean_text(text: str) -> str:
+    """Remove markdown, bullets, emojis, and special characters."""
     if not text:
         return ""
     text = str(text)
@@ -52,8 +52,16 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
-# -------------------- Ollama Generation -------------------- #
+
+def chunk_text(text, max_chars=800):
+    """Split text into manageable chunks for embedding."""
+    text = clean_text(text)
+    return [text[i:i + max_chars] for i in range(0, len(text), max_chars)]
+
+# ===================== Ollama Generation ===================== #
+
 def ollama_generate(prompt, temperature=0.6, max_tokens=300):
+    """Generate text from Ollama (Gemma 2B)."""
     try:
         response = requests.post(
             OLLAMA_URL,
@@ -75,15 +83,11 @@ def ollama_generate(prompt, temperature=0.6, max_tokens=300):
         traceback.print_exc()
         return f"Ollama error: {str(e)}"
 
-# -------------------- Chunking -------------------- #
-def chunk_text(text, max_chars=800):
-    text = clean_text(text)
-    return [text[i:i + max_chars] for i in range(0, len(text), max_chars)]
+# ===================== Vector Database Functions ===================== #
 
-# -------------------- Add Note to Vector DB -------------------- #
 def add_note_to_index(note_id: int, text: str):
+    """Add a note to the Qdrant vector database."""
     chunks = chunk_text(text)
-
     vectors = embedding_model.encode(chunks).tolist()
 
     points = []
@@ -104,103 +108,88 @@ def add_note_to_index(note_id: int, text: str):
         points=points
     )
 
-# -------------------- RAG Answer -------------------- #
-def rag_answer(query: str, top_k=3):
-    try:
-        query_embedding = embedding_model.encode(query).tolist()
+# ===================== AI Features ===================== #
 
-        search_result = qdrant.search(
-            collection_name=QDRANT_COLLECTION,
-            query_vector=query_embedding,
-            limit=top_k
-        )
-
-        if not search_result:
-            return "No relevant notes found."
-
-        context = "\n".join(
-            hit.payload["text"][:800] for hit in search_result
-        )
-
-        prompt = f"""
-You are a helpful study assistant.
-Answer using only the provided context.
-Use short, simple sentences.
-No symbols or bullets.
-
-Context:
-{context}
-
-Question:
-{clean_text(query)}
-"""
-
-        return ollama_generate(prompt)
-
-    except Exception as e:
-        traceback.print_exc()
-        return f"RAG error: {str(e)}"
-
-# -------------------- Summarize -------------------- #
 def summarize_text(text, sentences_count=5):
-    cleaned = clean_text(text)[:800]
-
-    prompt = f"""
-Summarize the following text in {sentences_count} short sentences.
-Use simple language.
+    """Summarize a given note text."""
+    cleaned_text = clean_text(text)[:1500]
+    
+    prompt = f"""Summarize the following text in about {sentences_count} short sentences.
+Avoid markdown, bullets, or special characters.
 
 Text:
-{cleaned}
+{cleaned_text}
 """
-    return ollama_generate(prompt)
+    
+    response = ollama_generate(prompt, max_tokens=400)
+    if response and not response.startswith("Ollama error"):
+        return response
+    
+    # Fallback: return first few sentences
+    sentences = [s.strip() for s in cleaned_text.split(".") if s.strip()]
+    return ". ".join(sentences[:sentences_count]) + "."
 
-# -------------------- Generate Questions -------------------- #
+
 def generate_questions_from_text(text, num_questions=5):
-    cleaned = clean_text(text)[:800]
+    """Generate conceptual questions from a study note."""
+    cleaned_text = clean_text(text)[:1200]
+    
+    prompt = f"""Generate {num_questions} short, one-line conceptual questions based on this study note.
+Avoid any special symbols.
 
-    prompt = f"""
-Generate {num_questions} short one-line questions
-from the following text.
-
-Text:
-{cleaned}
+Note:
+{cleaned_text}
 """
+    
+    response = ollama_generate(prompt, max_tokens=400)
+    
+    questions = []
+    if response and not response.startswith("Ollama error"):
+        lines = [line.strip() for line in response.split("\n") if line.strip()]
+        for line in lines[:num_questions]:
+            if line:
+                questions.append({"text": clean_text(line), "completed": False})
+    
+    # Fallback if no questions generated
+    if not questions:
+        sentences = [s.strip() for s in cleaned_text.split(".") if s.strip()]
+        for s in sentences[:num_questions]:
+            questions.append(
+                {"text": clean_text(f"What is {s}?"), "completed": False}
+            )
+    
+    return questions[:num_questions]
 
-    response = ollama_generate(prompt)
-    lines = [l.strip() for l in response.split("\n") if l.strip()]
 
-    return [
-        {"text": clean_text(line), "completed": False}
-        for line in lines[:num_questions]
-    ]
-
-# -------------------- Explain Topic -------------------- #
-def explain_topic(note_content: str, user_question: str):
-    cleaned_note = clean_text(note_content)[:800]
-
-    prompt = f"""
-Explain clearly using the note below.
-Use simple sentences.
+def explain_topic(note_content: str, user_question: str) -> str:
+    """Explain a concept based on note content."""
+    cleaned_note = clean_text(note_content)[:1000]
+    cleaned_question = clean_text(user_question)
+    
+    prompt = f"""Explain clearly and simply using the note.
+Use short sentences. No symbols.
 
 Note:
 {cleaned_note}
 
 Question:
-{clean_text(user_question)}
+{cleaned_question}
 """
-    return ollama_generate(prompt)
+    
+    return ollama_generate(prompt, max_tokens=400)
 
-# -------------------- Example Usage -------------------- #
+
+# ===================== Example Usage ===================== #
+
 if __name__ == "__main__":
     sample_text = (
-        "Python is a high-level programming language widely used "
-        "for artificial intelligence and data science. "
-        "It is easy to read and supports multiple programming styles."
+        "Python is a high-level programming language used for AI and data science. "
+        "It is simple, readable, and supports multiple paradigms."
     )
-
-    add_note_to_index(1, sample_text)
 
     print("Summary:\n", summarize_text(sample_text))
     print("\nQuestions:\n", generate_questions_from_text(sample_text))
     print("\nExplanation:\n", explain_topic(sample_text, "What is Python used for?"))
-    print("\nRAG Answer:\n", rag_answer("Where is Python commonly used?"))
+
+    add_note_to_index(1, sample_text)
+    print("\nNote added to vector database successfully!")

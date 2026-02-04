@@ -1,12 +1,22 @@
+"""
+rag_service.py
+
+RAG (Retrieval-Augmented Generation) service for answering questions 
+using context from uploaded notes.
+"""
+
 import re
 from difflib import SequenceMatcher
-from llm_service import ollama_generate  # make sure llm_service.py is in the same folder
 from database import get_db_connection
 from psycopg2.extras import RealDictCursor
+from llm_service import ollama_generate
 
+# ===================== Helper Functions ===================== #
 
 def clean_text(text):
     """Remove special characters, emojis, and extra whitespace."""
+    if not text:
+        return ""
     # Remove non-alphanumeric (keep spaces, commas, periods)
     text = re.sub(r'[^A-Za-z0-9.,?;:()\'" \n]', '', text)
     # Normalize whitespace
@@ -32,19 +42,19 @@ def find_relevant_chunks(note_text, query, num_chunks=3):
     top_chunks = [s for _, s in scored[:num_chunks]]
     return top_chunks
 
+# ===================== Single-Note RAG ===================== #
 
 def answer_with_context(note_text, query):
     """
-    RAG pipeline:
-    1. Retrieve relevant note chunks.
-    2. Ask Gemini to generate a clean, short, accurate answer.
-    3. Clean and return text output (no special symbols).
+    RAG pipeline for single note:
+    1. Retrieve relevant note chunks
+    2. Ask Ollama to generate a clean, short, accurate answer
+    3. Clean and return text output
     """
     relevant_chunks = find_relevant_chunks(note_text, query)
     context = "\n".join(relevant_chunks)
 
-    prompt = f"""
-You are an AI tutor. Use only the information from the context below to answer accurately.
+    prompt = f"""You are an AI tutor. Use only the information from the context below to answer accurately.
 Keep the answer short, factual, and clear. Avoid special characters.
 
 Context:
@@ -55,12 +65,14 @@ Question:
 
 Answer:
 """
+    
     try:
-        response = ollama_generate(prompt)
-        if not response:
-            # Retry once if Gemini stops early (finish_reason=2)
-            response = ollama_generate(prompt)
-        if response:
+        response = ollama_generate(prompt, max_tokens=400)
+        if not response or response.startswith("Ollama error"):
+            # Retry once if failed
+            response = ollama_generate(prompt, max_tokens=400)
+        
+        if response and not response.startswith("Ollama error"):
             return clean_text(response)
         else:
             return "Sorry, I couldn't generate a reliable answer."
@@ -68,22 +80,7 @@ Answer:
         print("RAG Error:", e)
         return "Sorry, something went wrong while generating the answer."
 
-
-def generate_summary(note_text):
-    """
-    Generate a concise summary of a note.
-    """
-    prompt = f"Summarize this text in 4-5 lines clearly and simply:\n\n{note_text}"
-    try:
-        response = ollama_generate(prompt)
-        if response:
-            return clean_text(response)
-        else:
-            return "Summary unavailable."
-    except Exception as e:
-        print("Summary Error:", e)
-        return "Error while summarizing the note."
-
+# ===================== Multi-Note RAG ===================== #
 
 def rag_answer(query, user_id=None):
     """
@@ -117,7 +114,7 @@ def rag_answer(query, user_id=None):
         all_chunks = []
         for note in notes:
             note_text = note['content']
-            chunks = find_relevant_chunks(note_text, query, num_chunks=2)  # Get top 2 from each note
+            chunks = find_relevant_chunks(note_text, query, num_chunks=2)
             for chunk in chunks:
                 # Calculate relevance score
                 score = SequenceMatcher(None, chunk.lower(), query.lower()).ratio()
@@ -137,14 +134,13 @@ def rag_answer(query, user_id=None):
         
         # Build context with note references
         context_parts = []
-        for i, chunk in enumerate(top_chunks, 1):
+        for chunk in top_chunks:
             context_parts.append(f"[From: {chunk['note_title']}]\n{chunk['text']}")
         
         context = "\n\n".join(context_parts)
         
-        # Generate answer using Gemini
-        prompt = f"""
-You are an AI tutor helping a student. Use the information from the student's notes below to answer their question accurately.
+        # Generate answer using Ollama
+        prompt = f"""You are an AI tutor helping a student. Use the information from the student's notes below to answer their question accurately.
 Keep the answer clear, concise, and well-structured. Avoid special characters.
 
 Context from notes:
@@ -155,12 +151,13 @@ Student's Question:
 
 Answer:
 """
-        response = ollama_generate(prompt)
-        if not response:
-            # Retry once if Gemini stops early
-            response = ollama_generate(prompt)
         
-        if response:
+        response = ollama_generate(prompt, max_tokens=500)
+        if not response or response.startswith("Ollama error"):
+            # Retry once
+            response = ollama_generate(prompt, max_tokens=500)
+        
+        if response and not response.startswith("Ollama error"):
             # Add source references
             source_notes = list(set([chunk['note_title'] for chunk in top_chunks]))
             answer = clean_text(response)

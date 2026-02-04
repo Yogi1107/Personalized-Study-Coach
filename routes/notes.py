@@ -1,3 +1,9 @@
+"""
+notes.py - Notes Management Routes
+
+Handles note upload, viewing, and deletion operations.
+"""
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required
 from werkzeug.utils import secure_filename
@@ -9,14 +15,16 @@ from database import get_db_connection
 from utils import extract_text_from_pdf, extract_text_from_txt
 from llm_service import add_note_to_index
 
-# ===================== Routes: Notes ===================== #
+# ===================== Blueprint ===================== #
 
 notes_bp = Blueprint('notes', __name__)
 
+# ===================== Routes ===================== #
 
 @notes_bp.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload():
+    """Upload a new note (PDF or TXT file)."""
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         file = request.files.get('file')
@@ -32,15 +40,17 @@ def upload():
             flash('Only PDF and TXT files are allowed', 'danger')
             return redirect(url_for('notes.upload'))
         
-        # Get upload folder from app config
+        # Save file
         from flask import current_app
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
         
+        # Extract text content
         content = extract_text_from_pdf(file_path) if ext == 'pdf' else extract_text_from_txt(file_path)
         upload_ts = datetime.utcnow()
         
         try:
+            # Save to database
             with get_db_connection() as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
                     cur.execute(
@@ -50,7 +60,7 @@ def upload():
                     new = cur.fetchone()
                     note_id = new['id']
             
-            # add to RAG index asynchronously if possible; here we call and ignore errors
+            # Add to RAG index
             try:
                 add_note_to_index(note_id, content)
             except Exception as e:
@@ -68,15 +78,19 @@ def upload():
 @notes_bp.route('/notes')
 @login_required
 def notes():
+    """Display all notes for the current user."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute('SELECT * FROM notes WHERE user_id = %s ORDER BY upload_date DESC', (session['user_id'],))
+            cur.execute(
+                'SELECT * FROM notes WHERE user_id = %s ORDER BY upload_date DESC',
+                (session['user_id'],)
+            )
             all_notes = cur.fetchall()
     
     notes_list = []
     for note in all_notes:
         note_copy = dict(note)
-        # upload_date from Postgres is likely a datetime object already
+        # Ensure upload_date is a datetime object
         ud = note_copy.get('upload_date')
         if isinstance(ud, str):
             try:
@@ -91,9 +105,13 @@ def notes():
 @notes_bp.route('/note/<int:note_id>')
 @login_required
 def view_note(note_id):
+    """View a specific note."""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute('SELECT * FROM notes WHERE id = %s AND user_id = %s', (note_id, session['user_id']))
+            cur.execute(
+                'SELECT * FROM notes WHERE id = %s AND user_id = %s',
+                (note_id, session['user_id'])
+            )
             note = cur.fetchone()
     
     if not note:
@@ -101,6 +119,8 @@ def view_note(note_id):
         return redirect(url_for('notes.notes'))
     
     note_dict = dict(note)
+    
+    # Ensure upload_date is a datetime object
     ud = note_dict.get('upload_date')
     if isinstance(ud, str):
         try:
@@ -123,9 +143,13 @@ def view_note(note_id):
 @notes_bp.route('/delete/<int:note_id>', methods=['POST'])
 @login_required
 def delete_note(note_id):
+    """Delete a note."""
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute('DELETE FROM notes WHERE id = %s AND user_id = %s', (note_id, session['user_id']))
+            cur.execute(
+                'DELETE FROM notes WHERE id = %s AND user_id = %s',
+                (note_id, session['user_id'])
+            )
     
     flash('Note deleted successfully!', 'success')
     return redirect(url_for('notes.notes'))
