@@ -51,7 +51,7 @@
       </h5>
     </div>
     <div class="card-body">
-      <form action="{{ url_for('ask_note', note_id=note.id) }}" method="POST">
+      <form action="{{ url_for('ai.ask_note', note_id=note.id) }}" method="POST">
         <div class="input-group">
           <input 
             type="text" 
@@ -88,24 +88,24 @@
   <!-- AI Actions & Navigation -->
   <div class="mt-4 d-flex flex-wrap gap-2">
     <a
-      href="{{ url_for('summarize_note', note_id=note.id) }}"
+      href="{{ url_for('ai.summarize_note', note_id=note.id) }}"
       class="btn btn-warning"
     >
       <i class="bi bi-lightbulb"></i> Summarize
     </a>
     <a
-      href="{{ url_for('questions_route', note_id=note.id) }}"
+      href="{{ url_for('ai.questions_route', note_id=note.id) }}"
       class="btn btn-info"
     >
       <i class="bi bi-question-circle"></i> Generate Questions
     </a>
     <a
-      href="{{ url_for('explain_note', note_id=note.id) }}"
+      href="{{ url_for('ai.explain_note', note_id=note.id) }}"
       class="btn btn-success"
     >
       <i class="bi bi-chat-dots"></i> Explain Topic
     </a>
-    <a href="{{ url_for('notes') }}" class="btn btn-outline-secondary">
+    <a href="{{ url_for('notes.notes') }}" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Back to Notes
     </a>
   </div>

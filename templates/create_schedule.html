@@ -4,7 +4,7 @@ endblock %} {% block content %}
   <h2>Create Exam Schedule</h2>
   <form
     method="POST"
-    action="{{ url_for('create_schedule') }}"
+    action="{{ url_for('schedule.create_schedule') }}"
     id="schedule-form"
   >
     <div class="mb-3">
@@ -83,7 +83,7 @@ endblock %} {% block content %}
       <button type="submit" class="btn btn-primary">Generate Schedule</button>
     </div>
   </form>
-  <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">
+  <a href="{{ url_for('main.home') }}" class="btn btn-secondary mt-3">
     <i class="bi bi-arrow-left"></i> Back to Home
   </a>
 </div>

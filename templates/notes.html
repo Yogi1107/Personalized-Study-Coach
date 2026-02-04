@@ -47,14 +47,14 @@ block content %}
 
           <!-- View / Delete / Mark Completed -->
           <a
-            href="{{ url_for('view_note', note_id=note.id) }}"
+            href="{{ url_for('notes.view_note', note_id=note.id) }}"
             class="btn btn-primary btn-sm mb-1"
           >
             <i class="bi bi-eye"></i> View
           </a>
           <form
             method="POST"
-            action="{{ url_for('delete_note', note_id=note.id) }}"
+            action="{{ url_for('notes.delete_note', note_id=note.id) }}"
             style="display: inline"
           >
             <button
@@ -68,8 +68,8 @@ block content %}
           {% if not note.is_completed %}
           <form
             method="POST"
-            action="{{ url_for('view_note', note_id=note.id) }}"
-            action="{{ url_for('view_note', note_id=note.id) }}"
+            action="{{ url_for('notes.view_note', note_id=note.id) }}"
+            action="{{ url_for('notes.view_note', note_id=note.id) }}"
             style="display: inline"
           >
             <button type="submit" class="btn btn-success btn-sm mb-1">
@@ -83,19 +83,19 @@ block content %}
           <!-- AI Feature Buttons -->
           <div class="mt-2">
             <a
-              href="{{ url_for('summarize_note', note_id=note.id) }}"
+              href="{{ url_for('ai.summarize_note', note_id=note.id) }}"
               class="btn btn-warning btn-sm mb-1"
             >
               <i class="bi bi-lightbulb"></i> Summarize
             </a>
             <a
-              href="{{ url_for('questions_route', note_id=note.id) }}"
+              href="{{ url_for('ai.questions_route', note_id=note.id) }}"
               class="btn btn-info btn-sm mb-1"
             >
               <i class="bi bi-question-circle"></i> Questions
             </a>
             <a
-              href="{{ url_for('explain_note', note_id=note.id) }}"
+              href="{{ url_for('ai.explain_note', note_id=note.id) }}"
               class="btn btn-success btn-sm mb-1"
             >
               <i class="bi bi-chat-dots"></i> Explain
@@ -109,11 +109,11 @@ block content %}
   {% else %}
   <p class="text-center text-muted">
     No notes uploaded yet. Start by
-    <a href="{{ url_for('upload') }}">uploading a note</a>.
+    <a href="{{ url_for('notes.upload') }}">uploading a note</a>.
   </p>
   {% endif %}
 
-  <a href="{{ url_for('home') }}" class="btn btn-secondary mt-4">
+  <a href="{{ url_for('main.home') }}" class="btn btn-secondary mt-4">
     <i class="bi bi-arrow-left"></i> Back to Home
   </a>
 </div>

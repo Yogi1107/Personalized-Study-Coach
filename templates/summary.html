@@ -18,12 +18,12 @@
       </div>
       <div class="mt-4">
         <a
-          href="{{ url_for('view_note', note_id=note.id) }}"
+          href="{{ url_for('notes.view_note', note_id=note.id) }}"
           class="btn btn-outline-secondary"
         >
           <i class="bi bi-arrow-left"></i> Back to Note
         </a>
-        <a href="{{ url_for('home') }}" class="btn btn-secondary">
+        <a href="{{ url_for('main.home') }}" class="btn btn-secondary">
           <i class="bi bi-arrow-left"></i> Back to Home
         </a>
       </div>

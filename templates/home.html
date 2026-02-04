@@ -65,7 +65,7 @@ block content %}
           <p class="card-text text-muted">
             View all your uploaded notes, read, or delete them anytime.
           </p>
-          <a href="{{ url_for('notes') }}" class="btn btn-primary mt-auto">
+          <a href="{{ url_for('notes.notes') }}" class="btn btn-primary mt-auto">
             <i class="bi bi-eye"></i> View Notes
           </a>
         </div>
@@ -83,7 +83,7 @@ block content %}
           <p class="card-text text-muted">
             Add a new note in PDF or TXT format to your collection.
           </p>
-          <a href="{{ url_for('upload') }}" class="btn btn-success mt-auto">
+          <a href="{{ url_for('notes.upload') }}" class="btn btn-success mt-auto">
             <i class="bi bi-upload"></i> Upload Note
           </a>
         </div>
@@ -102,7 +102,7 @@ block content %}
             Generate summaries, practice questions, or get explanations for your
             notes using AI.
           </p>
-          <a href="{{ url_for('notes') }}" class="btn btn-warning mt-auto">
+          <a href="{{ url_for('notes.notes') }}" class="btn btn-warning mt-auto">
             <i class="bi bi-lightbulb"></i> Go to Notes
           </a>
         </div>
@@ -122,13 +122,13 @@ block content %}
           </p>
           <div class="d-grid gap-2 w-100">
             <a
-              href="{{ url_for('create_schedule') }}"
+              href="{{ url_for('schedule.create_schedule') }}"
               class="btn btn-info text-white"
             >
               <i class="bi bi-plus-circle"></i> Create New
             </a>
             <a
-              href="{{ url_for('all_schedules') }}"
+              href="{{ url_for('schedule.all_schedules') }}"
               class="btn btn-outline-info"
             >
               <i class="bi bi-eye"></i> View Schedules
@@ -141,7 +141,7 @@ block content %}
 </div>
 
 <!-- Floating RAG Chat Button -->
-<a href="{{ url_for('rag_chat') }}" class="rag-chat-btn">
+<a href="{{ url_for('ai.rag_chat') }}" class="rag-chat-btn">
   <i class="bi bi-chat-dots-fill fs-3"></i>
 </a>
 
