@@ -1,4 +1,27 @@
+# Environment
 .env
-.myenv/
-uploads/
+*.env
+
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Uploads (don't commit user files)
+uploads/
+
+# ChromaDB index (rebuilt on first run)
+chroma_db/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

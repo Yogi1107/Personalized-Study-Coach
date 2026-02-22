@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: study-coach
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false        # you fill this in manually on Render dashboard
+      - key: DATABASE_URL
+        sync: false        # you fill this in manually on Render dashboard
+      - key: SECRET_KEY
+        sync: false        # you fill this in manually on Render dashboard
+      - key: PYTHON_VERSION
+        value: 3.11.0
