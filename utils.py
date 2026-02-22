@@ -1,4 +1,5 @@
 import PyPDF2
+from itertools import cycle
 
 # ===================== Helper Functions ===================== #
 
@@ -24,15 +25,42 @@ def split_chapters(chapters_str):
 
 
 def assign_chapters_to_slots(subject_chapters_map, assignments):
-    """Assign chapters to schedule slots sequentially."""
-    chapters_lists = {s: list(chaps) for s, chaps in subject_chapters_map.items()}
+    """
+    Assign chapters to schedule slots.
+    FIX: Cycles through chapters repeatedly instead of exhausting the list,
+    so every slot always has a chapter assigned.
+    Also merges slots shorter than MIN_SLOT_MINUTES with the previous slot
+    to avoid useless 9-minute fragments.
+    """
+    MIN_SLOT_MINUTES = 15  # drop slots shorter than this
+
+    # Build cycling iterators per subject (cycle back to start when exhausted)
+    chapter_cycles = {}
+    for subj, chapters in subject_chapters_map.items():
+        if chapters:
+            chapter_cycles[subj] = cycle(chapters)
+        else:
+            chapter_cycles[subj] = cycle([''])
+
+    # Filter out slots that are too short by merging them into previous slot
+    merged = []
+    for slot in assignments:
+        if slot['duration_minutes'] < MIN_SLOT_MINUTES and merged and merged[-1]['subject'] == slot['subject']:
+            # Extend previous slot's end time and duration instead
+            merged[-1]['slot_end'] = slot['slot_end']
+            merged[-1]['duration_minutes'] += slot['duration_minutes']
+        else:
+            merged.append(slot.copy())
+
+    # Assign chapters using cycling iterators
     results = []
-    for a in assignments:
-        subj = a['subject']
-        chapter = chapters_lists[subj].pop(0) if subj in chapters_lists and chapters_lists[subj] else ''
-        row = a.copy()
+    for slot in merged:
+        subj = slot['subject']
+        chapter = next(chapter_cycles.get(subj, cycle([''])))
+        row = slot.copy()
         row['chapter'] = chapter
         results.append(row)
+
     return results
 
 

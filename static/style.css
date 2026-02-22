@@ -1,3 +1,4 @@
+/* ==================== Preloader ==================== */
 #preloader {
   position: fixed;
   top: 0;
@@ -28,35 +29,32 @@
   animation: bouncedelay 1.4s infinite ease-in-out both;
 }
 
-.spinner .bounce1 {
-  animation-delay: -0.32s;
-}
-.spinner .bounce2 {
-  animation-delay: -0.16s;
-}
+.spinner .bounce1 { animation-delay: -0.32s; }
+.spinner .bounce2 { animation-delay: -0.16s; }
 
 @keyframes bouncedelay {
   0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1.0); }
+  40%           { transform: scale(1.0); }
 }
 
-/* Fade-out animation */
 #preloader.fade-out {
   opacity: 0;
   visibility: hidden;
 }
+
 .loading-text {
   color: #007bff;
   font-weight: bold;
   font-size: 1.1rem;
 }
 
+/* ==================== Base ==================== */
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f8f9fa;
 }
 
-/* -------------------- Navbar -------------------- */
+/* ==================== Navbar ==================== */
 .navbar-brand i {
   font-size: 1.3rem;
 }
@@ -68,7 +66,7 @@ body {
   border-radius: 0.25rem;
 }
 
-/* -------------------- Cards -------------------- */
+/* ==================== Cards ==================== */
 .card {
   border-radius: 0.5rem;
 }
@@ -81,19 +79,28 @@ body {
   font-size: 0.95rem;
 }
 
-/* -------------------- Notes Preview -------------------- */
+/* FIX: hover-card animation consolidated from inline styles across templates */
+.hover-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+  transform: translateY(-5px);
+}
+
+/* ==================== Notes ==================== */
 .note-content {
   font-size: 0.95rem;
   line-height: 1.5;
   color: #212529;
 }
 
-/* -------------------- Buttons -------------------- */
+/* ==================== Buttons ==================== */
 .btn i {
   margin-right: 0.3rem;
 }
 
-/* -------------------- Footer -------------------- */
+/* ==================== Footer ==================== */
 footer {
   background-color: #f8f9fa;
 }
@@ -102,12 +109,12 @@ footer p {
   font-size: 0.85rem;
 }
 
-/* -------------------- Flash Messages -------------------- */
+/* ==================== Flash Messages ==================== */
 .alert {
   border-radius: 0.5rem;
 }
 
-/* -------------------- Upload Form -------------------- */
+/* ==================== Forms ==================== */
 form .form-control {
   border-radius: 0.35rem;
 }
@@ -116,7 +123,60 @@ form .btn {
   border-radius: 0.35rem;
 }
 
-/* -------------------- Responsive Adjustments -------------------- */
+/* FIX: schedule card form margin consolidated from inline styles */
+.card form {
+  margin: 0;
+}
+
+/* ==================== RAG Chat Button ==================== */
+/* FIX: consolidated from inline styles in base.html and home.html */
+.rag-chat-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #dc3545;
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  z-index: 1000;
+  transition: transform 0.2s ease-in-out;
+}
+
+.rag-chat-btn:hover {
+  transform: scale(1.1);
+  color: white;
+}
+
+/* ==================== RAG Chat Window ==================== */
+/* FIX: consolidated from inline styles in rag_chat.html */
+#chatWindow div {
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+#chatWindow div:nth-child(odd) {
+  background-color: #d1ecf1;
+  text-align: left;
+}
+
+#chatWindow div:nth-child(even) {
+  background-color: #f8d7da;
+  text-align: left;
+}
+
+/* ==================== Schedule ==================== */
+/* FIX: consolidated from inline styles in view_schedule.html */
+h4 i {
+  margin-right: 6px;
+}
+
+/* ==================== Responsive ==================== */
 @media (max-width: 768px) {
   .card {
     margin-bottom: 1rem;

@@ -1,5 +1,6 @@
-{% extends "base.html" %} {% block title %}All Study Schedules - Study Coach{%
-endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}All Study Schedules - Study Coach{% endblock %}
+{% block content %}
 <div class="container mt-5">
   <h1 class="text-center mb-5 text-primary">
     <i class="bi bi-calendar-check"></i> All Study Schedules
@@ -13,38 +14,22 @@ endblock %} {% block content %}
         <div class="card-body d-flex flex-column justify-content-between">
           <div>
             <h5 class="card-title text-primary">{{ exam['name'] }}</h5>
-            <p class="card-text text-muted">
-              Exam Date: {{ exam['exam_date'] }}
-            </p>
-            <p class="card-text text-muted">
-              Created At: {{ exam['created_at'].strftime('%Y-%m-%d') }}
-            </p>
+            <p class="card-text text-muted">Exam Date: {{ exam['exam_date'] }}</p>
+            <p class="card-text text-muted">Created: {{ exam['created_at'].strftime('%Y-%m-%d') }}</p>
           </div>
           <div class="d-grid gap-2 mt-3">
-            <a
-              href="{{ url_for('schedule.view_schedule', exam_id=exam['id']) }}"
-              class="btn btn-info text-white"
-            >
+            <a href="{{ url_for('schedule.view_schedule', exam_id=exam['id']) }}" class="btn btn-info text-white">
               <i class="bi bi-eye"></i> View Schedule
             </a>
-            <a
-              href="{{ url_for('schedule.export_schedule_csv', exam_id=exam['id']) }}"
-              class="btn btn-outline-success"
-            >
+            <a href="{{ url_for('schedule.export_schedule_csv', exam_id=exam['id']) }}" class="btn btn-outline-success">
               <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
             </a>
-            <a
-              href="{{ url_for('schedule.export_schedule_pdf', exam_id=exam['id']) }}"
-              class="btn btn-outline-danger"
-            >
+            <a href="{{ url_for('schedule.export_schedule_pdf', exam_id=exam['id']) }}" class="btn btn-outline-danger">
               <i class="bi bi-file-earmark-pdf"></i> Export PDF
             </a>
-            <form
-              action="{{ url_for('schedule.delete_schedule', exam_id=exam['id']) }}"
-              method="POST"
-              onsubmit="return confirm('Are you sure you want to delete this schedule?');"
-            >
-              <button type="submit" class="btn btn-danger">
+            <form action="{{ url_for('schedule.delete_schedule', exam_id=exam['id']) }}" method="POST"
+              onsubmit="return confirm('Are you sure you want to delete this schedule?');">
+              <button type="submit" class="btn btn-danger w-100">
                 <i class="bi bi-trash"></i> Delete Schedule
               </button>
             </form>
@@ -56,26 +41,15 @@ endblock %} {% block content %}
   </div>
   {% else %}
   <div class="text-center mt-5">
-    <p class="text-muted fs-5">
-      No exams/schedules found. Create a new study schedule to get started!
-    </p>
+    <p class="text-muted fs-5">No schedules found. Create one to get started!</p>
     <a href="{{ url_for('schedule.create_schedule') }}" class="btn btn-primary">
       <i class="bi bi-plus-circle"></i> Create Schedule
     </a>
   </div>
   {% endif %}
-  <a href="{{ url_for('main.home') }}" class="btn btn-secondary">
+
+  <a href="{{ url_for('main.home') }}" class="btn btn-secondary mt-4">
     <i class="bi bi-arrow-left"></i> Back to Home
   </a>
 </div>
-
-<style>
-  .hover-card:hover {
-    transform: translateY(-5px);
-    transition: all 0.2s ease-in-out;
-  }
-  form {
-    margin: 0;
-  }
-</style>
 {% endblock %}

@@ -24,7 +24,7 @@ def init_db():
         password VARCHAR(255) NOT NULL
     );
     '''
-    
+
     create_notes = '''
     CREATE TABLE IF NOT EXISTS notes (
         id SERIAL PRIMARY KEY,
@@ -34,19 +34,22 @@ def init_db():
         file_type VARCHAR(50) NOT NULL,
         upload_date TIMESTAMP NOT NULL,
         summary TEXT,
-        questions TEXT
+        questions TEXT,
+        is_completed BOOLEAN NOT NULL DEFAULT FALSE
     );
     '''
-    
+
+    # FIX: added user_id to exams so schedules are user-scoped
     create_exams = '''
     CREATE TABLE IF NOT EXISTS exams (
         id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         name VARCHAR(255) NOT NULL,
         exam_date DATE NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     '''
-    
+
     create_subjects = '''
     CREATE TABLE IF NOT EXISTS subjects (
         id SERIAL PRIMARY KEY,
@@ -56,7 +59,7 @@ def init_db():
         priority VARCHAR(50)
     );
     '''
-    
+
     create_schedules = '''
     CREATE TABLE IF NOT EXISTS schedules (
         id SERIAL PRIMARY KEY,
@@ -71,7 +74,16 @@ def init_db():
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     '''
-    
+
+    # Safe migrations for existing databases
+    migrate_notes_completed = '''
+    ALTER TABLE notes ADD COLUMN IF NOT EXISTS is_completed BOOLEAN NOT NULL DEFAULT FALSE;
+    '''
+
+    migrate_exams_user_id = '''
+    ALTER TABLE exams ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+    '''
+
     with get_db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(create_users)
@@ -79,3 +91,5 @@ def init_db():
             cur.execute(create_exams)
             cur.execute(create_subjects)
             cur.execute(create_schedules)
+            cur.execute(migrate_notes_completed)
+            cur.execute(migrate_exams_user_id)

@@ -29,6 +29,7 @@ init_db()
 
 # ===================== Register Blueprints ===================== #
 
+# FIX: import directly from module files, not from a 'routes' package
 from routes.auth import auth_bp
 from routes.main import main_bp
 from routes.notes import notes_bp
