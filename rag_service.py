@@ -1,13 +1,18 @@
 """
 rag_service.py
 
-RAG service for answering questions using context from uploaded notes.
+RAG service using sentence-transformers for semantic similarity.
 """
 
 import re
-from difflib import SequenceMatcher
+import numpy as np
+from sentence_transformers import SentenceTransformer, util
 from database import get_db
 from groq_service import groq_generate
+
+# Load model once at module level — free, runs locally, no API key needed
+# 'all-MiniLM-L6-v2' is small (80MB), fast, and good quality
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 
 def clean_text(text):
@@ -19,17 +24,24 @@ def clean_text(text):
 
 
 def find_relevant_chunks(note_text, query, num_chunks=3):
+    """
+    Split note into sentences and rank by cosine similarity
+    to the query using sentence-transformer embeddings.
+    """
     sentences = [s.strip() for s in re.split(r'[.!?]', note_text) if len(s.strip()) > 20]
     if not sentences:
         return [note_text]
 
-    scored = []
-    for sent in sentences:
-        score = SequenceMatcher(None, sent.lower(), query.lower()).ratio()
-        scored.append((score, sent))
+    # Encode query and all sentences into embedding vectors
+    query_embedding = model.encode(query, convert_to_tensor=True)
+    sentence_embeddings = model.encode(sentences, convert_to_tensor=True)
 
-    scored.sort(reverse=True)
-    return [s for _, s in scored[:num_chunks]]
+    # Compute cosine similarity between query and each sentence
+    scores = util.cos_sim(query_embedding, sentence_embeddings)[0]
+
+    # Pick top-N sentences by score
+    top_indices = scores.argsort(descending=True)[:num_chunks]
+    return [sentences[i] for i in top_indices]
 
 
 def answer_with_context(note_text, query):
@@ -63,7 +75,7 @@ Answer:
 
 
 def rag_answer(query, user_id=None):
-    """RAG answer function that searches across all of a user's notes."""
+    """RAG answer across all of a user's notes using semantic search."""
     try:
         db = get_db()
 
@@ -73,23 +85,34 @@ def rag_answer(query, user_id=None):
         if not notes:
             return "No notes found in your library. Please upload some notes first."
 
+        # Encode the query once
+        query_embedding = model.encode(query, convert_to_tensor=True)
+
         all_chunks = []
         for note in notes:
-            chunks = find_relevant_chunks(note['content'], query, num_chunks=2)
-            for chunk in chunks:
-                score = SequenceMatcher(None, chunk.lower(), query.lower()).ratio()
+            sentences = [s.strip() for s in re.split(r'[.!?]', note['content']) if len(s.strip()) > 20]
+            if not sentences:
+                continue
+
+            sentence_embeddings = model.encode(sentences, convert_to_tensor=True)
+            scores = util.cos_sim(query_embedding, sentence_embeddings)[0]
+
+            # Take top 2 chunks per note
+            top_indices = scores.argsort(descending=True)[:2]
+            for i in top_indices:
                 all_chunks.append({
-                    'score': score,
-                    'text': chunk,
+                    'score': scores[i].item(),
+                    'text': sentences[i],
                     'note_title': note['title'],
                     'note_id': str(note['_id'])
                 })
 
+        if not all_chunks:
+            return "I couldn't find relevant information in your notes to answer this question."
+
+        # Sort all chunks across all notes by score, take top 5
         all_chunks.sort(key=lambda x: x['score'], reverse=True)
         top_chunks = all_chunks[:5]
-
-        if not top_chunks:
-            return "I couldn't find relevant information in your notes to answer this question."
 
         context_parts = [f"[From: {c['note_title']}]\n{c['text']}" for c in top_chunks]
         context = "\n\n".join(context_parts)
