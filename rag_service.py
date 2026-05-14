@@ -10,9 +10,14 @@ from sentence_transformers import SentenceTransformer, util
 from database import get_db
 from groq_service import groq_generate
 
-# Load model once at module level — free, runs locally, no API key needed
-# 'all-MiniLM-L6-v2' is small (80MB), fast, and good quality
-model = SentenceTransformer('all-MiniLM-L6-v2')
+# Lazy-loaded — won't download until first RAG request
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+    return _model
 
 
 def clean_text(text):
@@ -33,8 +38,8 @@ def find_relevant_chunks(note_text, query, num_chunks=3):
         return [note_text]
 
     # Encode query and all sentences into embedding vectors
-    query_embedding = model.encode(query, convert_to_tensor=True)
-    sentence_embeddings = model.encode(sentences, convert_to_tensor=True)
+    query_embedding = get_model().encode(query, convert_to_tensor=True)
+    sentence_embeddings = get_model().encode(sentences, convert_to_tensor=True)
 
     # Compute cosine similarity between query and each sentence
     scores = util.cos_sim(query_embedding, sentence_embeddings)[0]
@@ -86,7 +91,7 @@ def rag_answer(query, user_id=None):
             return "No notes found in your library. Please upload some notes first."
 
         # Encode the query once
-        query_embedding = model.encode(query, convert_to_tensor=True)
+        query_embedding = get_model().encode(query, convert_to_tensor=True)
 
         all_chunks = []
         for note in notes:
@@ -94,7 +99,7 @@ def rag_answer(query, user_id=None):
             if not sentences:
                 continue
 
-            sentence_embeddings = model.encode(sentences, convert_to_tensor=True)
+            sentence_embeddings = get_model().encode(sentences, convert_to_tensor=True)
             scores = util.cos_sim(query_embedding, sentence_embeddings)[0]
 
             # Take top 2 chunks per note
