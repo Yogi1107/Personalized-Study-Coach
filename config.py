@@ -1,14 +1,15 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env file automatically in local dev
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-fallback-key-change-in-production')
+    MONGO_URI = os.environ.get('MONGO_URI', '')
+    WTF_CSRF_ENABLED = True
 
-    # MongoDB URI — e.g. mongodb+srv://user:pass@cluster.mongodb.net/dbname
-    MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/StudyCoach')
-
-    # File uploads
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
 
     @staticmethod
     def init_app(app):

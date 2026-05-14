@@ -12,6 +12,7 @@ __pycache__/
 env/
 venv/
 .venv/
+.myenv/
 
 # Uploads (don't commit user files)
 uploads/
