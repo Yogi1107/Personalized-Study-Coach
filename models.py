@@ -1,29 +1,28 @@
 from flask_login import UserMixin
-from database import get_db_connection
-from psycopg2.extras import RealDictCursor
-
-# ===================== Flask-Login User Class ===================== #
+from database import get_db
 
 class User(UserMixin):
     def __init__(self, id, username, password):
-        self.id = str(id)  # flask-login expects id to be str-like
+        self.id = str(id)   # Flask-Login expects a string-like id
         self.username = username
         self.password = password
 
     @staticmethod
     def load_user(user_id):
         """
-        user_id will be a string; convert to int for DB lookup
+        Load a user by their string id.
+        MongoDB stores _id as ObjectId; we accept either ObjectId or
+        a plain integer id stored in a separate 'id' field, depending
+        on your insert strategy. This version uses the _id field.
         """
+        from bson import ObjectId
         try:
-            uid = int(user_id)
+            oid = ObjectId(user_id)
         except Exception:
             return None
-        
-        with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute('SELECT * FROM users WHERE id = %s', (uid,))
-                row = cur.fetchone()
-                if row:
-                    return User(row['id'], row['username'], row['password'])
+
+        db = get_db()
+        row = db.users.find_one({'_id': oid})
+        if row:
+            return User(str(row['_id']), row['username'], row['password'])
         return None

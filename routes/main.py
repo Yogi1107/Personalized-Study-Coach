@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, session
 from flask_login import login_required, current_user
-from psycopg2.extras import RealDictCursor
-from database import get_db_connection
+from database import get_db
 
 # ===================== Routes: Home ===================== #
 
@@ -12,23 +11,14 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/home')
 @login_required
 def home():
-    # FIX: use current_user.id instead of session
-    user_id = int(current_user.id)
+    user_id = current_user.id  # already a string, no int() cast needed
 
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute('SELECT COUNT(*) as cnt FROM notes WHERE user_id = %s', (user_id,))
-            total_notes = cur.fetchone()['cnt']
+    db = get_db()
 
-            cur.execute('SELECT COUNT(*) as cnt FROM notes WHERE user_id = %s AND summary IS NOT NULL', (user_id,))
-            total_summaries = cur.fetchone()['cnt']
-
-            cur.execute('SELECT COUNT(*) as cnt FROM notes WHERE user_id = %s AND questions IS NOT NULL', (user_id,))
-            total_questions = cur.fetchone()['cnt']
-
-            # FIX: count only this user's schedules via exams.user_id
-            cur.execute('SELECT COUNT(*) as cnt FROM exams WHERE user_id = %s', (user_id,))
-            total_schedules = cur.fetchone()['cnt']
+    total_notes     = db.notes.count_documents({'user_id': user_id})
+    total_summaries = db.notes.count_documents({'user_id': user_id, 'summary': {'$ne': None}})
+    total_questions = db.notes.count_documents({'user_id': user_id, 'questions': {'$ne': None}})
+    total_schedules = db.exams.count_documents({'user_id': user_id})
 
     return render_template(
         'home.html',

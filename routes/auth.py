@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
-from psycopg2.extras import RealDictCursor
-from psycopg2 import errors as pg_errors
-from database import get_db_connection
+from pymongo.errors import DuplicateKeyError
+from database import get_db
 from models import User
 
 # ===================== Routes: User Authentication ===================== #
@@ -24,21 +23,15 @@ def register():
         hashed_password = generate_password_hash(password)
 
         try:
-            with get_db_connection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                    cur.execute(
-                        'INSERT INTO users (username, password) VALUES (%s, %s) RETURNING id',
-                        (username, hashed_password)
-                    )
-                    cur.fetchone()
+            db = get_db()
+            db.users.insert_one({'username': username, 'password': hashed_password})
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('auth.login'))
+        except DuplicateKeyError:
+            flash('Username already exists', 'danger')
+            return redirect(url_for('auth.register'))
         except Exception as e:
-            # FIX: simplified unique violation check
-            if isinstance(e, pg_errors.UniqueViolation):
-                flash('Username already exists', 'danger')
-            else:
-                flash(f'Error during registration: {str(e)}', 'danger')
+            flash(f'Error during registration: {str(e)}', 'danger')
             return redirect(url_for('auth.register'))
 
     return render_template('register.html')
@@ -50,16 +43,13 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
 
-        with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute('SELECT * FROM users WHERE username = %s', (username,))
-                row = cur.fetchone()
+        db = get_db()
+        row = db.users.find_one({'username': username})
 
         if row and check_password_hash(row['password'], password):
-            user = User(row['id'], row['username'], row['password'])
+            user = User(str(row['_id']), row['username'], row['password'])
             login_user(user)
-            # FIX: use current_user going forward; keep session for templates that need it
-            session['user_id'] = row['id']
+            session['user_id'] = str(row['_id'])
             session['username'] = row['username']
             flash('Logged in successfully!', 'success')
             return redirect(url_for('main.home'))

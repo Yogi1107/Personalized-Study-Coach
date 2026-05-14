@@ -1,34 +1,34 @@
 {% extends "base.html" %}
-{% block title %}{{ note.title }} - Study Coach{% endblock %}
+{% block title %}{{ note['title'] }} - Study Coach{% endblock %}
 {% block content %}
 
 <div class="container mt-5">
   <div class="card shadow-sm">
     <div class="card-header bg-primary text-white">
       <h3 class="mb-0">
-        <i class="bi bi-journal-text"></i> {{ note.title }}
+        <i class="bi bi-journal-text"></i> {{ note['title'] }}
       </h3>
       <p class="mb-0 mt-2" style="font-size: 0.9rem">
         <i class="bi bi-calendar"></i> 
-        Uploaded on {{ note.upload_date }}
+        Uploaded on {{ note['upload_date'] }}
       </p>
     </div>
 
     <div class="card-body">
       <h5 class="text-secondary mb-3">Content:</h5>
-      <p style="white-space: pre-line;">{{ note.content }}</p>
+      <p style="white-space: pre-line;">{{ note['content'] }}</p>
 
-      {% if note.summary %}
+      {% if note['summary'] %}
       <hr />
       <h5 class="text-secondary mb-3">Summary:</h5>
-      <p>{{ note.summary }}</p>
+      <p>{{ note['summary'] }}</p>
       {% endif %}
 
-      {% if note.questions %}
+      {% if note['questions'] %}
       <hr />
       <h5 class="text-secondary mb-3">Practice Questions:</h5>
       <ul class="list-group">
-        {% for q in note.questions %}
+        {% for q in note['questions'] %}
         <li class="list-group-item">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="q{{ loop.index0 }}" {% if q.completed %}checked{% endif %}>
@@ -51,7 +51,7 @@
       </h5>
     </div>
     <div class="card-body">
-      <form action="{{ url_for('ai.ask_note', note_id=note.id) }}" method="POST">
+      <form action="{{ url_for('ai.ask_note', note_id=note['_id']) }}" method="POST">
         <div class="input-group">
           <input 
             type="text" 
@@ -87,22 +87,13 @@
 
   <!-- AI Actions & Navigation -->
   <div class="mt-4 d-flex flex-wrap gap-2">
-    <a
-      href="{{ url_for('ai.summarize_note', note_id=note.id) }}"
-      class="btn btn-warning"
-    >
+    <a href="{{ url_for('ai.summarize_note', note_id=note['_id']) }}" class="btn btn-warning">
       <i class="bi bi-lightbulb"></i> Summarize
     </a>
-    <a
-      href="{{ url_for('ai.questions_route', note_id=note.id) }}"
-      class="btn btn-info"
-    >
+    <a href="{{ url_for('ai.questions_route', note_id=note['_id']) }}" class="btn btn-info">
       <i class="bi bi-question-circle"></i> Generate Questions
     </a>
-    <a
-      href="{{ url_for('ai.explain_note', note_id=note.id) }}"
-      class="btn btn-success"
-    >
+    <a href="{{ url_for('ai.explain_note', note_id=note['_id']) }}" class="btn btn-success">
       <i class="bi bi-chat-dots"></i> Explain Topic
     </a>
     <a href="{{ url_for('notes.notes') }}" class="btn btn-outline-secondary">

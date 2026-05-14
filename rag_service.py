@@ -6,8 +6,7 @@ RAG service for answering questions using context from uploaded notes.
 
 import re
 from difflib import SequenceMatcher
-from database import get_db_connection
-from psycopg2.extras import RealDictCursor
+from database import get_db
 from groq_service import groq_generate
 
 
@@ -52,7 +51,6 @@ Answer:
 
     try:
         response = groq_generate(prompt, max_tokens=400)
-        # FIX: check for "Error" prefix, not "Ollama error"
         if not response or response.startswith("Error"):
             response = groq_generate(prompt, max_tokens=400)
 
@@ -67,13 +65,10 @@ Answer:
 def rag_answer(query, user_id=None):
     """RAG answer function that searches across all of a user's notes."""
     try:
-        with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                if user_id:
-                    cur.execute('SELECT id, title, content FROM notes WHERE user_id = %s', (user_id,))
-                else:
-                    cur.execute('SELECT id, title, content FROM notes')
-                notes = cur.fetchall()
+        db = get_db()
+
+        query_filter = {'user_id': user_id} if user_id else {}
+        notes = list(db.notes.find(query_filter, {'title': 1, 'content': 1}))
 
         if not notes:
             return "No notes found in your library. Please upload some notes first."
@@ -87,7 +82,7 @@ def rag_answer(query, user_id=None):
                     'score': score,
                     'text': chunk,
                     'note_title': note['title'],
-                    'note_id': note['id']
+                    'note_id': str(note['_id'])
                 })
 
         all_chunks.sort(key=lambda x: x['score'], reverse=True)
@@ -112,7 +107,6 @@ Answer:
 """
 
         response = groq_generate(prompt, max_tokens=500)
-        # FIX: check for "Error" prefix, not "Ollama error"
         if not response or response.startswith("Error"):
             response = groq_generate(prompt, max_tokens=500)
 

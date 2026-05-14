@@ -11,7 +11,7 @@
     <div class="card-body">
       {% if questions %}
       <!-- FIX: POST now actually saves checkbox state via ai.questions_route -->
-      <form method="POST" action="{{ url_for('ai.questions_route', note_id=note.id) }}">
+      <form method="POST" action="{{ url_for('ai.questions_route', note_id=note['_id']) }}">
         {% for q in questions %}
         <div class="form-check mb-3">
           <input class="form-check-input" type="checkbox" name="completed[]"
@@ -31,7 +31,7 @@
       {% endif %}
 
       <div class="mt-4">
-        <a href="{{ url_for('notes.view_note', note_id=note.id) }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for('notes.view_note', note_id=note['_id']) }}" class="btn btn-outline-secondary">
           <i class="bi bi-arrow-left"></i> Back to Note
         </a>
         <a href="{{ url_for('notes.notes') }}" class="btn btn-secondary">
