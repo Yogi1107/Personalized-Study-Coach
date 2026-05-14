@@ -1,6 +1,7 @@
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from config import Config
+import certifi
 
 _client = None
 _db = None
@@ -11,7 +12,8 @@ def get_db():
         try:
             _client = MongoClient(
                 Config.MONGO_URI,
-                serverSelectionTimeoutMS=5000  # fail fast if Atlas unreachable
+                serverSelectionTimeoutMS=5000, # fail fast if Atlas unreachable
+                tlsCAFile=certifi.where()
             )
             # Force a connection check
             _client.admin.command('ping')
