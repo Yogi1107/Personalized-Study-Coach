@@ -1,6 +1,9 @@
 # StudyMitra - Personalized Study Coach
 
-A web application that helps students study efficiently by combining their course notes with AI-powered learning assistance.
+I built a Personalized Study Coach — a full-stack web app to help students study more effectively using AI.
+The problem was that students upload notes but rarely revisit them productively, and manually creating a study schedule before exams is tedious.
+So I built a Flask backend with MongoDB, where users upload PDF or text notes, and I used the Groq API with a RAG pipeline — TF-IDF retrieval plus LLM generation — to let students ask questions and get summaries grounded in their own notes. I also built a scheduling algorithm that auto-generates a day-wise study plan based on exam dates, subject priority, and available hours.
+The result is a fully deployed app on Render with MongoDB Atlas — users can upload notes, chat with their content, and export a personalized schedule as PDF or CSV.
 
 ---
 
